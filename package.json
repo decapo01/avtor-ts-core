@@ -1,0 +1,20 @@
+{
+  "name": "avtor-ts-core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "/dist/index.js",
+  "type": "/dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/luxon": "^1.21.0",
+    "typescript": "^3.7.2"
+  },
+  "dependencies": {
+    "@types/uuid": "^3.4.6",
+    "luxon": "^1.21.1"
+  }
+}
