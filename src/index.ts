@@ -38,10 +38,16 @@ export type RepoError = {
   log : Log
 }
 
+type RegisterUserDto = {
+  email           : string,
+  password        : string,
+  confirmPassword : string
+}
+
 type RegisterUserReq = {
-  user : UnverifiedUser,
+  user            : RegisterUserDto,
   findUserByEmail : (email: string) => Promise<Option<User>>,
-  insertUser : (user: UnverifiedUser) => Promise<Result<RepoOk,RepoError>>
+  insertUser      : (user: UnverifiedUser) => Promise<Result<RepoOk,RepoError>>
 }
 
 type RegisterUserSuccess = {
@@ -50,11 +56,11 @@ type RegisterUserSuccess = {
 }
 
 type RegisterUserFailure = {
-  user : UnverifiedUser,
+  user : RegisterUserDto,
   log  : Log
 }
 
-const userExistsResult = (user: UnverifiedUser) : RegisterUserFailure => {
+const userExistsResult = (user: RegisterUserDto) : RegisterUserFailure => {
   return {
     user: user,
     log : {
@@ -64,6 +70,23 @@ const userExistsResult = (user: UnverifiedUser) : RegisterUserFailure => {
   }
 }
 
+type RegisterUserDtoError = {}
+
+function validateRegisterDto(registerDto: RegisterUserDto) : Result<RegisterUserDto,RegisterUserDtoError> {
+
+  const isEmail = registerDto.email.indexOf('@') > -1
+
+  const isValidPassword = registerDto.password.length > 8
+
+  const passwordsMatch = registerDto.password == registerDto.confirmPassword
+
+  if (isEmail && isValidPassword && passwordsMatch){
+    return ok(registerDto)
+  }
+  else {
+    return er({})
+  }
+}
 
 const insertUser = async (req: RegisterUserReq): Promise<Result<RegisterUserSuccess,RegisterUserFailure>> => {
   
@@ -81,9 +104,8 @@ const insertUser = async (req: RegisterUserReq): Promise<Result<RegisterUserSucc
   }
 }
 
-
-export const registerUser = async (req: RegisterUserReq): Promise<Result<RegisterUserSuccess,RegisterUserFailure>> => {
-
+async function continueRegistration(req: RegisterUserReq): Promise<Result<RegisterUserSuccess,RegisterUserFailure>> {
+  
   const userOpt = await req.findUserByEmail(req.user.email)
   
   switch(userOpt.type){
@@ -93,6 +115,19 @@ export const registerUser = async (req: RegisterUserReq): Promise<Result<Registe
     }
     case OptType.None : {
       return await insertUser(req)
+    }
+  }
+}
+
+export const registerUser = async (req: RegisterUserReq): Promise<Result<RegisterUserSuccess,RegisterUserFailure>> => {
+
+  switch(validateRegisterDto(req.user).type){
+
+    case ResType.Er : {
+        return await er({user: req.user, log : { msg: "", code : "s"}})
+    }
+    case ResType.Ok : {
+      return await continueRegistration(req)
     }
   }
 }
